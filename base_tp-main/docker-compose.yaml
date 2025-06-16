@@ -1,0 +1,59 @@
+services:
+  airflow:
+    build: .
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
+      - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
+      - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
+      - ${AIRFLOW_PROJ_DIR:-.}/td7:/opt/airflow/td7
+      - ${AIRFLOW_PROJ_DIR:-.}/dbt_tp:/opt/airflow/dbt_tp
+      - ./.env:/opt/airflow/.env
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__COSMOS__DBT_DOCS_DIR=/opt/airflow/dbt_tp/target
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:latest
+    restart: unless-stopped
+    ports:
+      - 5432:5432
+    volumes:
+      - ./sql/:/docker-entrypoint-initdb.d/
+    environment:
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+      - POSTGRES_USER=$POSTGRES_USER
+      - POSTGRES_DB=$POSTGRES_DB_NAME
+    healthcheck:
+      test:
+        ["CMD", "psql", "-U", "$POSTGRES_USER", "-c", "SELECT 1", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  dbt:
+    build:
+      context: dbt_tp
+    restart: "no"
+    ports:
+      - 8085:8085
+    volumes:
+      - ./dbt_tp:/dbt
+    environment:
+      - PG_DB_HOST=postgres
+      - PG_DB_PORT=5432
+      - PG_DB_USER=$POSTGRES_USER
+      - PG_DB_PASSWORD=$POSTGRES_PASSWORD
+      - PG_DB_DBNAME=$POSTGRES_DB_NAME
+    command: --help
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-db-volume:
