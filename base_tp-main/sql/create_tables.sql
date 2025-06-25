@@ -237,6 +237,7 @@ CREATE TABLE VOTO (
         REFERENCES MESA_UTILIZA_MAQUINA(nro_mesa, id_centro, id_eleccion, numero_serie)
 );
 
+
 CREATE TABLE VOTO_ELECCION_LEGISLATIVA (
     num_voto            VARCHAR(20),
     id_eleccion         VARCHAR(20),

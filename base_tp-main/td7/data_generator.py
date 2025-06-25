@@ -16,7 +16,7 @@ class DataGenerator:
         self.fake.add_provider(internet)
         self.fake.add_provider(phone_number)
 
-    def generate_electores(self, n: int) -> Records:
+    def generate_elector(self, n: int) -> Records:
         """Genera n electores para el sistema.
 
         Parameters
@@ -44,7 +44,7 @@ class DataGenerator:
             })
         return electores
 
-    def generate_maquinas_votos(self, n: int) -> Records:
+    def generate_maquina_votos(self, n: int) -> Records:
         """Genera n máquinas de votación."""
         maquinas = []
         for _ in range(n):
@@ -55,7 +55,7 @@ class DataGenerator:
             })
         return maquinas
 
-    def generate_centros_votacion(self, n: int) -> Records:
+    def generate_centro_votacion(self, n: int) -> Records:
         """Genera n centros de votación."""
         centros = []
         provincias = ['Buenos Aires', 'CABA', 'Córdoba', 'Santa Fe', 'Mendoza']
@@ -70,7 +70,7 @@ class DataGenerator:
             })
         return centros
 
-    def generate_elecciones(self, n: int) -> Records:
+    def generate_eleccion(self, n: int) -> Records:
         """Genera n elecciones base."""
         elecciones = []
         territorios = ['Nacional', 'Provincial', 'Municipal']
@@ -82,7 +82,35 @@ class DataGenerator:
             })
         return elecciones
 
-    def generate_elecciones_legislativas(self, elecciones: Records) -> Records:
+    def generate_eleccion_typed(self, n: int) -> tuple[Records, Records, Records]:
+        """
+        Genera n elecciones base y las asigna aleatoriamente como legislativas o consultas populares,
+        de modo que la suma total de elecciones legislativas y de consultas populares sea igual a n,
+        y cada elección sea de un solo tipo. Los id_eleccion de las tablas de tipo SIEMPRE provienen de la base.
+        """
+        elecciones = self.generate_eleccion(n)
+        elecciones_legislativas = []
+        consultas_populares = []
+        tipos = ["legislativa"] * (n // 2) + ["consulta"] * (n - (n // 2))
+        random.shuffle(tipos)
+        for eleccion, tipo in zip(elecciones, tipos):
+            if tipo == "legislativa":
+                elecciones_legislativas.append({
+                    "id_eleccion": eleccion["id_eleccion"],
+                    "cargo": random.choice(["Diputado", "Senador", "Concejal"])
+                })
+            else:
+                consultas_populares.append({
+                    "id_eleccion": eleccion["id_eleccion"],
+                    "pregunta": random.choice([
+                        "¿Está de acuerdo con la implementación de X?",
+                        "¿Aprueba la modificación de Y?",
+                        "¿Prefiere la opción A o B?"
+                    ])
+                })
+        return elecciones, elecciones_legislativas, consultas_populares
+
+    def generate_eleccion_legislativa(self, elecciones: Records) -> Records:
         """Genera elecciones legislativas a partir de elecciones base."""
         legislativas = []
         cargos = ['Diputado', 'Senador', 'Concejal']
@@ -93,7 +121,7 @@ class DataGenerator:
             })
         return legislativas
 
-    def generate_consultas_populares(self, elecciones: Records) -> Records:
+    def generate_consulta_popular(self, elecciones: Records) -> Records:
         """Genera consultas populares a partir de elecciones base."""
         consultas = []
         preguntas = [
@@ -108,25 +136,21 @@ class DataGenerator:
             })
         return consultas
 
-    def generate_mesas_electorales(self, centros: Records, elecciones: Records, 
-                                 tecnicos: Records, integrantes: Records) -> Records:
+    def generate_mesa_electoral(self, centros: Records, elecciones: Records) -> Records:
         """Genera mesas electorales con sus integrantes."""
         mesas = []
         for centro in centros:
             for eleccion in elecciones:
                 n_mesas = random.randint(1, 5)
                 for i in range(n_mesas):
-                    # Seleccionar integrantes aleatorios
-                    
                     mesas.append({
                         "nro_mesa": f"M{i+1}",
                         "id_centro": centro["id_centro"],
                         "id_eleccion": eleccion["id_eleccion"]
-                    
                     })
         return mesas
 
-    def generate_mesas_utiliza_maquina(self, mesas: Records, maquinas: Records) -> Records:
+    def generate_mesa_utiliza_maquina(self, mesas: Records, maquinas: Records) -> Records:
         """Genera la relación entre mesas y máquinas de votación."""
         relaciones = []
         for mesa in mesas:
@@ -141,21 +165,29 @@ class DataGenerator:
                 })
         return relaciones
 
-    def generate_padron_eleccion(self, electores: Records, mesas: Records) -> Records:
-        """Genera el padrón electoral para las elecciones."""
+    def generate_padron_eleccion(self, electores: Records, mesas: Records, elecciones: Records) -> Records:
+        """
+        Genera el padrón electoral para las elecciones, asignando un set diferente de electores a cada elección.
+        Para cada elección, selecciona aleatoriamente un subconjunto de electores y los asigna a esa elección,
+        con si_voto aleatorio (80% de probabilidad).
+        """
         padron = []
-        for elector in electores:
-            mesa = random.choice(mesas)
-            padron.append({
-                "dni_elector": elector["dni"],
-                "id_eleccion": mesa["id_eleccion"],
-                "nro_mesa": mesa["nro_mesa"],
-                "id_centro": mesa["id_centro"],
-                "si_voto": False
-            })
+        for eleccion in elecciones:
+            # Por ejemplo, 70% de los electores para cada elección
+            electores_para_eleccion = random.sample(electores, k=int(len(electores) * 0.7))
+            mesas_de_eleccion = [m for m in mesas if m["id_eleccion"] == eleccion["id_eleccion"]]
+            for elector in electores_para_eleccion:
+                mesa = random.choice(mesas_de_eleccion)
+                padron.append({
+                    "dni_elector": elector["dni"],
+                    "id_eleccion": eleccion["id_eleccion"],
+                    "nro_mesa": mesa["nro_mesa"],
+                    "id_centro": mesa["id_centro"],
+                    "si_voto": random.random() < 0.8
+                })
         return padron
 
-    def generate_partidos_politicos(self, n: int) -> Records:
+    def generate_partido_politico(self, n: int) -> Records:
         """Genera n partidos políticos."""
         partidos = []
         for _ in range(n):
@@ -165,7 +197,7 @@ class DataGenerator:
             })
         return partidos
 
-    def generate_politicos(self, n: int) -> Records:
+    def generate_politico(self, n: int) -> Records:
         """Genera n políticos."""
         politicos = []
         for _ in range(n):
@@ -176,7 +208,7 @@ class DataGenerator:
             })
         return politicos
 
-    def generate_candidatos(self, politicos: Records, elecciones_legislativas: Records) -> Records:
+    def generate_candidato(self, politicos: Records, elecciones_legislativas: Records) -> Records:
         """Genera candidatos para las elecciones legislativas."""
         candidatos = []
         for eleccion in elecciones_legislativas:
@@ -189,7 +221,7 @@ class DataGenerator:
                 })
         return candidatos
 
-    def generate_politico_eleccion_partido(self, candidatos: Records, partidos: Records) -> Records:
+    def generate_politico_eleccion_pertenece_partido(self, candidatos: Records, partidos: Records) -> Records:
         """Genera la relación entre políticos, elecciones y partidos."""
         relaciones = []
         for candidato in candidatos:
@@ -232,7 +264,7 @@ class DataGenerator:
                 })
         return relaciones
 
-    def generate_opciones_respuesta(self, n: int) -> Records:
+    def generate_opcion_respuesta(self, n: int) -> Records:
         """Genera n opciones de respuesta para consultas populares."""
         opciones = []
         for _ in range(n):
@@ -255,11 +287,10 @@ class DataGenerator:
                 })
         return relaciones
 
-    def generate_votos(self, padron: Records, mesas_maquinas: Records, n_votos: int) -> Records:
+    def generate_voto(self, padron: Records, mesas_maquinas: Records, n_votos: int) -> Records:
         """Genera votos para las elecciones."""
         votos = []
         selected_padron = random.sample(padron, min(n_votos, len(padron)))
-        
         for registro in selected_padron:
             # Encontrar una máquina asignada a la mesa del votante
             maquinas_mesa = [m for m in mesas_maquinas 
@@ -269,19 +300,22 @@ class DataGenerator:
             
             if maquinas_mesa:
                 maquina = random.choice(maquinas_mesa)
+                tipo = random.choice(["legislativa", "consulta"])
                 votos.append({
                     "num_voto": f"V{self.fake.unique.numerify(text='#######')}",
                     "id_eleccion": registro["id_eleccion"],
                     "nro_mesa": registro["nro_mesa"],
                     "numero_serie": maquina["numero_serie"],
                     "id_centro": registro["id_centro"],
-                    "ts": self.fake.date_time_between(start_date='-1d', end_date='now')
+                    "ts": self.fake.date_time_between(start_date='-1d', end_date='now'),
+                    "tipo": tipo
                 })
+
                 registro["si_voto"] = True
-        
+                
         return votos
 
-    def generate_votos_eleccion_legislativa(self, votos: Records, candidatos: Records) -> Records:
+    def generate_voto_eleccion_legislativa(self, votos: Records, candidatos: Records) -> Records:
         """Genera votos para elecciones legislativas."""
         votos_legislativos = []
         for voto in votos:
@@ -294,7 +328,7 @@ class DataGenerator:
                 })
         return votos_legislativos
 
-    def generate_votos_consulta_popular(self, votos: Records, consultas: Records) -> Records:
+    def generate_voto_consulta_popular(self, votos: Records, consultas: Records) -> Records:
         """Genera votos para consultas populares."""
         votos_consultas = []
         for voto in votos:

@@ -14,8 +14,6 @@ from cosmos.airflow.task_group import DbtTaskGroup
 from cosmos.constants import TestBehavior
 from cosmos.operators import DbtDocsOperator
 from cosmos.profiles import PostgresUserPasswordProfileMapping
-from airflow.operators.bash import BashOperator
-from airflow.providers.postgres.operators.postgres import PostgresOperator
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -47,62 +45,42 @@ def copy_docs(project_dir: str):
 
 
 with DAG(
-    "run_dbt_voting",
+    "run_dbt",
     default_args=DEFAULT_ARGS,
-    description='Ejecuta transformaciones dbt para el sistema de votación',
-    schedule_interval=timedelta(days=1),
-    start_date=datetime(2024, 1, 1),
+    schedule=None,  # TODO: complete aquí con lo que considere
     catchup=False,
-    tags=['voting', 'dbt'],
-) as dag:
-
-    # Tarea para ejecutar dbt deps
-    dbt_deps = BashOperator(
-        task_id='dbt_deps',
-        bash_command='cd /opt/airflow/dbt_tp && dbt deps',
+    max_active_runs=1,
+    tags=["dbt"],
+):
+    project_config = ProjectConfig(
+        dbt_project_path=DBT_ROOT_PATH,
+        project_name=DBT_PROJECT_NAME,
     )
 
-    # Tarea para ejecutar dbt seed
-    dbt_seed = BashOperator(
-        task_id='dbt_seed',
-        bash_command='cd /opt/airflow/dbt_tp && dbt seed',
+    profile_config = ProfileConfig(
+        profile_name="dbt_tp",
+        target_name="dev",
+        profile_mapping=PostgresUserPasswordProfileMapping(
+            conn_id=POSTGRES_CONN,
+            profile_args={"dbname": "postgres", "schema": "public"},
+        ),
     )
 
-    # Tarea para ejecutar dbt run para modelos de staging
-    dbt_run_staging = BashOperator(
-        task_id='dbt_run_staging',
-        bash_command='cd /opt/airflow/dbt_tp && dbt run --select staging',
+    dbt_task_group = DbtTaskGroup(
+        group_id="dbt_task_group",
+        profile_config=profile_config,
+        project_config=project_config,
+        execution_config=ExecutionConfig(execution_mode=ExecutionMode.LOCAL),
+        render_config=RenderConfig(
+            emit_datasets=False, test_behavior=TestBehavior.AFTER_EACH, dbt_deps=True
+        ),
     )
 
-    # Tarea para ejecutar dbt run para modelos intermedios
-    dbt_run_intermediate = BashOperator(
-        task_id='dbt_run_intermediate',
-        bash_command='cd /opt/airflow/dbt_tp && dbt run --select intermediate',
+    generate_dbt_docs = DbtDocsOperator(
+        task_id="generate_dbt_docs",
+        project_dir=project_config.dbt_project_path,
+        profile_config=profile_config,
+        callback=copy_docs,
     )
 
-    # Tarea para ejecutar dbt run para modelos marts
-    dbt_run_marts = BashOperator(
-        task_id='dbt_run_marts',
-        bash_command='cd /opt/airflow/dbt_tp && dbt run --select marts',
-    )
-
-    # Tarea para ejecutar dbt test
-    dbt_test = BashOperator(
-        task_id='dbt_test',
-        bash_command='cd /opt/airflow/dbt_tp && dbt test',
-    )
-
-    # Tarea para ejecutar dbt docs generate
-    dbt_docs_generate = BashOperator(
-        task_id='dbt_docs_generate',
-        bash_command='cd /opt/airflow/dbt_tp && dbt docs generate',
-    )
-
-    # Tarea para ejecutar dbt docs serve (opcional, solo si quieres servir la documentación)
-    dbt_docs_serve = BashOperator(
-        task_id='dbt_docs_serve',
-        bash_command='cd /opt/airflow/dbt_tp && dbt docs serve --port 8080',
-    )
-
-    # Definir el orden de las tareas
-    dbt_deps >> dbt_seed >> dbt_run_staging >> dbt_run_intermediate >> dbt_run_marts >> dbt_test >> dbt_docs_generate >> dbt_docs_serve
+    dbt_task_group >> generate_dbt_docs
