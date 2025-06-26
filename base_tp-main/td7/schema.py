@@ -27,3 +27,9 @@ class Schema:
     
     def insert(self, records: Records, table: str):
         self.db.run_insert(records, table)
+
+    def get_candidatos_por_eleccion(self) -> Records:
+        return self.db.run_select("""SELECT dni_politico, id_eleccion FROM politico_eleccion_pertenece_partido""")
+
+    def get_opciones_por_consulta(self) -> Records:
+        return self.db.run_select("""SELECT id_eleccion, id_opcion FROM cp_tiene_opcion_respuesta""")

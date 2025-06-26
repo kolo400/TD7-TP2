@@ -9,11 +9,6 @@ CREATE TABLE ELECTOR (
     codigo_postal       VARCHAR(50)
 );
 
-CREATE TABLE INTEGRANTE (
-    dni                 VARCHAR(20) PRIMARY KEY,
-    nombre              VARCHAR(50),
-    apellido            VARCHAR(50)
-);
 
 /* Infraestructura física */
 CREATE TABLE MAQUINA_VOTOS (
@@ -31,27 +26,6 @@ CREATE TABLE CENTRO_VOTACION (
     codigo_postal       VARCHAR(50)
 );
 
-/* Tipos de Integrantes Obligatorios */
-CREATE TABLE TECNICO (
-    dni                 VARCHAR(20) PRIMARY KEY,
-    nivel_experiencia   VARCHAR(20),
-    FOREIGN KEY (dni)   REFERENCES INTEGRANTE(dni)
-);
-
-CREATE TABLE PRESIDENTE (
-    dni                 VARCHAR(20) PRIMARY KEY,
-    FOREIGN KEY (dni)   REFERENCES INTEGRANTE(dni)
-);
-
-CREATE TABLE VICEPRESIDENTE (
-    dni                 VARCHAR(20) PRIMARY KEY,
-    FOREIGN KEY (dni)   REFERENCES INTEGRANTE(dni)
-);
-
-CREATE TABLE SUPLENTE (
-    dni                 VARCHAR(20) PRIMARY KEY,
-    FOREIGN KEY (dni)   REFERENCES INTEGRANTE(dni)
-);
 
 /*------------------------------------------------------------------------------
  * ELECCIONES Y TIPOS DE ELECCIONES
@@ -82,18 +56,10 @@ CREATE TABLE CONSULTA_POPULAR (
 CREATE TABLE MESA_ELECTORAL (
     nro_mesa             VARCHAR(20),
     id_centro           VARCHAR(20),
-    id_eleccion         VARCHAR(20),
-    dni_tecnico         VARCHAR(20) NOT NULL,
-    dni_vicepresidente  VARCHAR(20) NOT NULL,
-    dni_presidente      VARCHAR(20) NOT NULL,
-    dni_suplente        VARCHAR(20) NOT NULL,
+    id_eleccion         VARCHAR(20)
     PRIMARY KEY (nro_mesa, id_centro, id_eleccion),
     FOREIGN KEY (id_centro)          REFERENCES CENTRO_VOTACION(id_centro),
-    FOREIGN KEY (id_eleccion)        REFERENCES ELECCION(id_eleccion),
-    FOREIGN KEY (dni_tecnico)        REFERENCES TECNICO(dni),
-    FOREIGN KEY (dni_vicepresidente) REFERENCES VICEPRESIDENTE(dni),
-    FOREIGN KEY (dni_presidente)     REFERENCES PRESIDENTE(dni),
-    FOREIGN KEY (dni_suplente)       REFERENCES SUPLENTE(dni)
+    FOREIGN KEY (id_eleccion)        REFERENCES ELECCION(id_eleccion)
 );
 
 CREATE TABLE MESA_UTILIZA_MAQUINA (
@@ -160,38 +126,12 @@ CREATE TABLE CAMIONETA_CENTRO_ELECCION (
     FOREIGN KEY (id_centro)    REFERENCES CENTRO_VOTACION(id_centro)
 );
 
-/*------------------------------------------------------------------------------
- * FISCALES Y PARTIDOS POLÍTICOS
- *------------------------------------------------------------------------------*/
-
-CREATE TABLE FISCAL (
-    dni                 VARCHAR(20) PRIMARY KEY,
-    FOREIGN KEY (dni)   REFERENCES INTEGRANTE(dni)
-);
-
-CREATE TABLE MESA_FISCAL (
-    dni_fiscal          VARCHAR(20),
-    nro_mesa             VARCHAR(20),
-    id_centro           VARCHAR(20),
-    id_eleccion         VARCHAR(20),
-    PRIMARY KEY (dni_fiscal, nro_mesa, id_centro, id_eleccion),
-    FOREIGN KEY (dni_fiscal) REFERENCES FISCAL(dni),
-    FOREIGN KEY (nro_mesa, id_centro, id_eleccion) 
-        REFERENCES MESA_ELECTORAL(nro_mesa, id_centro, id_eleccion)
-);
 
 CREATE TABLE PARTIDO_POLITICO (
     id_partido          VARCHAR(20) PRIMARY KEY,
     nombre              VARCHAR(50)
 );
 
-CREATE TABLE FISCAL_PARTIDO (
-    dni_fiscal          VARCHAR(20),
-    id_partido          VARCHAR(20),
-    PRIMARY KEY (dni_fiscal, id_partido),
-    FOREIGN KEY (dni_fiscal) REFERENCES FISCAL(dni),
-    FOREIGN KEY (id_partido) REFERENCES PARTIDO_POLITICO(id_partido)
-);
 
 /*------------------------------------------------------------------------------
  * POLÍTICOS Y CANDIDATURAS
