@@ -10,7 +10,6 @@ CREATE TABLE ELECTOR (
 );
 
 
-/* Infraestructura física */
 CREATE TABLE MAQUINA_VOTOS (
     numero_serie        VARCHAR(30) PRIMARY KEY,
     info_hardware       VARCHAR(100),
@@ -27,9 +26,6 @@ CREATE TABLE CENTRO_VOTACION (
 );
 
 
-/*------------------------------------------------------------------------------
- * ELECCIONES Y TIPOS DE ELECCIONES
- *------------------------------------------------------------------------------*/
 
 CREATE TABLE ELECCION (
     id_eleccion         VARCHAR(20) PRIMARY KEY,
@@ -49,14 +45,11 @@ CREATE TABLE CONSULTA_POPULAR (
     FOREIGN KEY (id_eleccion) REFERENCES ELECCION(id_eleccion)
 );
 
-/*------------------------------------------------------------------------------
- * MESAS ELECTORALES Y MESAS QUE UTILIZAN MAQUINAS
- *------------------------------------------------------------------------------*/
 
 CREATE TABLE MESA_ELECTORAL (
     nro_mesa             VARCHAR(20),
     id_centro           VARCHAR(20),
-    id_eleccion         VARCHAR(20)
+    id_eleccion         VARCHAR(20),
     PRIMARY KEY (nro_mesa, id_centro, id_eleccion),
     FOREIGN KEY (id_centro)          REFERENCES CENTRO_VOTACION(id_centro),
     FOREIGN KEY (id_eleccion)        REFERENCES ELECCION(id_eleccion)
@@ -74,9 +67,6 @@ CREATE TABLE MESA_UTILIZA_MAQUINA (
         REFERENCES MAQUINA_VOTOS(numero_serie)
 );
 
-/*------------------------------------------------------------------------------
- * PADRÓN ELECTORAL
- *------------------------------------------------------------------------------*/
 
 CREATE TABLE PADRON_ELECCION ( 
     dni_elector         VARCHAR(20),
@@ -91,40 +81,6 @@ CREATE TABLE PADRON_ELECCION (
         REFERENCES MESA_ELECTORAL(nro_mesa, id_centro, id_eleccion)
 );
 
-/*------------------------------------------------------------------------------
- * LOGISTICA (CAMIONETA Y RESPONSABLE)
- *------------------------------------------------------------------------------*/
- 
-CREATE TABLE RESPONSABLE (
-    dni                 VARCHAR(20) PRIMARY KEY,
-    nombre              VARCHAR(50),
-    apellido            VARCHAR(50)
-);
-
-CREATE TABLE CAMIONETA (
-    patente        VARCHAR(20) PRIMARY KEY,
-    marca               VARCHAR(50),
-    modelo              VARCHAR(50)
-);
-
-/* Relación camioneta-responsable */
-CREATE TABLE CAMIONETA_RESPONSABLE (
-    patente        VARCHAR(20),
-    dni_responsable     VARCHAR(20),
-    PRIMARY KEY (patente, dni_responsable),
-    FOREIGN KEY (patente)    REFERENCES CAMIONETA(patente),
-    FOREIGN KEY (dni_responsable) REFERENCES RESPONSABLE(dni)
-);
-
-CREATE TABLE CAMIONETA_CENTRO_ELECCION (
-    patente        VARCHAR(20),
-    id_eleccion         VARCHAR(20),
-    id_centro           VARCHAR(20),
-    PRIMARY KEY (patente, id_eleccion),
-    FOREIGN KEY (patente) REFERENCES CAMIONETA(patente),
-    FOREIGN KEY (id_eleccion)  REFERENCES ELECCION(id_eleccion),
-    FOREIGN KEY (id_centro)    REFERENCES CENTRO_VOTACION(id_centro)
-);
 
 
 CREATE TABLE PARTIDO_POLITICO (
@@ -133,9 +89,6 @@ CREATE TABLE PARTIDO_POLITICO (
 );
 
 
-/*------------------------------------------------------------------------------
- * POLÍTICOS Y CANDIDATURAS
- *------------------------------------------------------------------------------*/
 
 CREATE TABLE POLITICO (
     dni_politico        VARCHAR(20) PRIMARY KEY,
@@ -160,10 +113,6 @@ CREATE TABLE POLITICO_ELECCION_PERTENECE_PARTIDO (
         REFERENCES CANDIDATO(dni_politico, id_eleccion),
     FOREIGN KEY (id_partido) REFERENCES PARTIDO_POLITICO(id_partido)
 );
-
-/*------------------------------------------------------------------------------
- * SISTEMA DE VOTACIÓN
- *------------------------------------------------------------------------------*/
 
 CREATE TABLE VOTO (
     num_voto            VARCHAR(20),

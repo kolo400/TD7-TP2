@@ -1,65 +1,53 @@
-
-
 version: 2
 
 models:
-  - name: partido_ganador_provincia
-    description: "Partido ganador por provincia"
+  - name: ranking_politicos
+    description: "Ranking de políticos por cantidad de votos en cada elección"
     columns:
-      - name: provincia
-        description: "Provincia"
-        tests:
+      - name: id_eleccion
+        data_tests:
+          - not_null
+      - name: politico
+        data_tests:
+          - not_null
+      - name: votos_recibidos
+        data_tests:
+          - not_null
+
+  - name: porcentaje_votos_blanco
+    description: "Porcentaje de votos en blanco por elección legislativa"
+    columns:
+      - name: id_eleccion
+        data_tests:
+          - not_null
+      - name: pct_votos_blanco
+        data_tests:
+          - not_null
+          - expression_is_true:
+              expression: "pct_votos_blanco >= 0 and pct_votos_blanco <= 100"
+
+  - name: porcentaje_respuestas_por_cp
+    description: "% de cada respuesta en consultas populares"
+    columns:
+      - name: id_eleccion
+        data_tests:
+          - not_null
+      - name: id_opcion
+        data_tests:
+          - not_null
+      - name: pct_respuesta
+        data_tests:
+          - not_null
+          - expression_is_true:
+              expression: "pct_respuesta >= 0 and pct_respuesta <= 100"
+
+  - name: ganador_consulta
+    description: "Opción ganadora en cada consulta popular"
+    columns:
+      - name: id_eleccion
+        data_tests:
           - not_null
           - unique
-      - name: partido_ganador
-        description: "Nombre del partido ganador"
-        tests:
+      - name: ganador_opcion
+        data_tests:
           - not_null
-      - name: cantidad_votos
-        description: "Cantidad de votos obtenidos"
-        tests:
-          - not_null
-          - dbt_utils.expression_is_true:
-              expression: "> 0"
-
-  - name: top_5_nacional
-    description: "Top 5 partidos a nivel nacional"
-    columns:
-      - name: ranking
-        description: "Posición en el ranking"
-        tests:
-          - not_null
-          - dbt_utils.expression_is_true:
-              expression: "between 1 and 5"
-      - name: partido
-        description: "Nombre del partido"
-        tests:
-          - not_null
-      - name: total_votos
-        description: "Total de votos obtenidos"
-        tests:
-          - not_null
-          - dbt_utils.expression_is_true:
-              expression: "> 0"
-
-  - name: participacion_etaria
-    description: "Participación electoral por franja etaria"
-    columns:
-      - name: rango_edad
-        description: "Rango de edad"
-        tests:
-          - not_null
-          - accepted_values:
-              values: ['18-25', '26-40', '41-60', '60+']
-      - name: cantidad_votantes
-        description: "Cantidad de votantes en el rango"
-        tests:
-          - not_null
-          - dbt_utils.expression_is_true:
-              expression: "> 0"
-      - name: porcentaje_participacion
-        description: "Porcentaje de participación"
-        tests:
-          - not_null
-          - dbt_utils.expression_is_true:
-              expression: "between 0 and 100"

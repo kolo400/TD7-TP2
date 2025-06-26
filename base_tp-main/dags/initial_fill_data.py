@@ -66,13 +66,6 @@ def carga_inicial():
     else:
         electores = schema.db.run_select("SELECT * FROM elector")
 
-    # 7. Padrón electoral
-    if get_table_count(schema, "padron_eleccion") == 0:
-        padron = generator.generate_padron_eleccion(electores, mesas, elecciones)
-        schema.insert(padron, "padron_eleccion")
-    else:
-        padron = schema.db.run_select("SELECT * FROM padron_eleccion")
-
     # 8. Partidos políticos
     if get_table_count(schema, "partido_politico") == 0:
         partidos = generator.generate_partido_politico(5)

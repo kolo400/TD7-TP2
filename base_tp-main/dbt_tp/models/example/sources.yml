@@ -1,51 +1,14 @@
 version: 2
 
 sources:
-  - name: raw_election_data
-    database: election_db
-    schema: raw
+  - name: electoral_db
+    schema: public
     tables:
-      - name: raw_results
-        description: "Resultados electorales por centro de votación"
-        columns:
-          - name: id_resultado
-            description: "Identificador único del resultado"
-            tests:
-              - unique
-              - not_null
-          - name: id_centro
-            description: "ID del centro de votación"
-          - name: id_partido
-            description: "ID del partido político"
-          - name: cantidad_votos
-            description: "Cantidad de votos obtenidos"
-          - name: fecha_eleccion
-            description: "Fecha de la elección"
-
-      - name: raw_parties
-        description: "Información de partidos políticos"
-        columns:
-          - name: id_partido
-            description: "Identificador único del partido"
-            tests:
-              - unique
-              - not_null
-          - name: nombre_partido
-            description: "Nombre del partido político"
-          - name: sigla
-            description: "Sigla del partido"
-
-      - name: raw_voters
-        description: "Información de electores"
-        columns:
-          - name: id_elector
-            description: "Identificador único del elector"
-            tests:
-              - unique
-              - not_null
-          - name: fecha_nacimiento
-            description: "Fecha de nacimiento del elector"
-          - name: provincia
-            description: "Provincia de residencia"
-          - name: centro_votacion
-            description: "Centro de votación asignado"
+      - name: voto
+      - name: voto_eleccion_legislativa
+      - name: voto_consulta_popular
+      - name: voto_elije_opcion_respuesta   
+      - name: politico
+      - name: politico_eleccion_pertenece_partido
+      - name: opcion_respuesta
+      - name: cp_tiene_opcion_respuesta

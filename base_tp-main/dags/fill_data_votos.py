@@ -6,7 +6,7 @@ import pendulum
 from td7.data_generator import DataGenerator
 from td7.schema import Schema
 
-EVENTS_PER_DAY = 10_000
+EVENTS_PER_DAY = 10000
 
 def generar_padron(**kwargs):
     gen    = DataGenerator()
@@ -16,14 +16,14 @@ def generar_padron(**kwargs):
     mesas      = schema.db.run_select("SELECT * FROM mesa_utiliza_maquina")
     elecciones = schema.db.run_select("SELECT * FROM eleccion")
 
-    registro = gen.generate_padron_eleccion(electores, mesas, elecciones)
-    if registro:
-        schema.insert([registro], "padron_eleccion")
-    return registro
+    elector = gen.generate_padron_eleccion(electores, mesas, elecciones)
+    if elector:
+        schema.insert([elector], "padron_eleccion")
+    return elector
 
 def decide_si_voto(**kwargs):
     ti     = kwargs['ti']
-    padron = ti.xcom_pull(task_ids='generar_padron') or {}
+    padron = ti.xcom_pull(task_ids='generar_elector_padron') or {}
     return 'insertar_voto' if padron.get('si_voto') else 'fin'
 
 def generar_voto_task(**kwargs):
@@ -101,7 +101,7 @@ def insertar_consulta(**kwargs):
 with DAG(
     dag_id='generar_voto_dag',
     start_date=pendulum.datetime(2025, 6, 1, tz='UTC'),
-    schedule_interval='*/20 * * * *',
+    schedule_interval='* * * * *',
     catchup=False,
 ) as dag:
 
