@@ -52,9 +52,7 @@ class Schema:
         )
         
         with self.db.engine.connect() as conn:
-            # Execute the statement and get the result proxy
             result = conn.execute(stmt)
-            # The 'rowcount' attribute tells us how many rows were affected.
             # For "ON CONFLICT DO NOTHING", this is 1 for an insert, 0 for a conflict.
             return result.rowcount
 
