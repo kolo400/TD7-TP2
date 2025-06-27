@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: ranking_politicos
+  - name: ranking_politicos_por_eleccion
     description: "Ranking de políticos por cantidad de votos en cada elección"
     columns:
       - name: id_eleccion
@@ -14,7 +14,7 @@ models:
         data_tests:
           - not_null
 
-  - name: porcentaje_votos_blanco
+  - name: porcentaje_votos_blancos
     description: "Porcentaje de votos en blanco por elección legislativa"
     columns:
       - name: id_eleccion
@@ -41,7 +41,7 @@ models:
           - expression_is_true:
               expression: "pct_respuesta >= 0 and pct_respuesta <= 100"
 
-  - name: ganador_consulta
+  - name: ganador_cp
     description: "Opción ganadora en cada consulta popular"
     columns:
       - name: id_eleccion

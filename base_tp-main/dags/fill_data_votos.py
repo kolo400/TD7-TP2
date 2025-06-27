@@ -19,23 +19,18 @@ def generar_padron(**kwargs):
     if not electores or not mesas or not elecciones:
         return {}
 
-    # Obtener todos los padrones existentes
     padrones_existentes = schema.db.run_select("SELECT dni_elector, id_eleccion FROM padron_eleccion")
     
-    # Calcular el total de combinaciones posibles
     total_combinaciones_posibles = len(electores) * len(elecciones)
     combinaciones_ocupadas = len(padrones_existentes)
     
-    # Si ya están todas las combinaciones ocupadas, no podemos generar más
     if combinaciones_ocupadas >= total_combinaciones_posibles:
         print(f"INFO: Todas las combinaciones posibles ya están ocupadas ({combinaciones_ocupadas}/{total_combinaciones_posibles})")
         return {}
     
-    # Usar el método inteligente que evita duplicados
     elector = gen.generate_padron_eleccion_smart(electores, mesas, elecciones, padrones_existentes)
     
     if elector:
-        # Insertar el padrón generado
         schema.insert([elector], "padron_eleccion")
         print(f"INFO: Generado padrón - Elector: {elector['dni_elector']}, Elección: {elector['id_eleccion']}")
         return elector
@@ -77,8 +72,6 @@ def decide_tipo_voto(**kwargs):
         return 'insertar_consulta'
     return 'fin'
 
-# --------------- NUEVAS TAREAS PARA "ELIGE" ---------------
-
 def insertar_voto_elige_candidato(**kwargs):
     ti         = kwargs['ti']
     voto       = ti.xcom_pull(task_ids='insertar_voto', key='voto')
@@ -99,7 +92,6 @@ def insertar_voto_elige_opcion(**kwargs):
     if vo:
         schema.insert([vo], 'voto_elije_opcion_respuesta')
 
-# --------------- TAREAS DE INSERCIÓN BASE ---------------
 
 def insertar_legislativa(**kwargs):
     ti     = kwargs['ti']

@@ -336,8 +336,6 @@ class DataGenerator:
                     "tipo": tipo
                 })
 
-                #registro["si_voto"] = True
-
         return votos
 
     def generate_voto_eleccion_legislativa(self, votos: Records, candidatos: Records) -> Records:
