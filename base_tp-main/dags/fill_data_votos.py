@@ -16,10 +16,32 @@ def generar_padron(**kwargs):
     mesas      = schema.db.run_select("SELECT * FROM mesa_utiliza_maquina")
     elecciones = schema.db.run_select("SELECT * FROM eleccion")
 
-    elector = gen.generate_padron_eleccion(electores, mesas, elecciones)
+    if not electores or not mesas or not elecciones:
+        return {}
+
+    # Obtener todos los padrones existentes
+    padrones_existentes = schema.db.run_select("SELECT dni_elector, id_eleccion FROM padron_eleccion")
+    
+    # Calcular el total de combinaciones posibles
+    total_combinaciones_posibles = len(electores) * len(elecciones)
+    combinaciones_ocupadas = len(padrones_existentes)
+    
+    # Si ya están todas las combinaciones ocupadas, no podemos generar más
+    if combinaciones_ocupadas >= total_combinaciones_posibles:
+        print(f"INFO: Todas las combinaciones posibles ya están ocupadas ({combinaciones_ocupadas}/{total_combinaciones_posibles})")
+        return {}
+    
+    # Usar el método inteligente que evita duplicados
+    elector = gen.generate_padron_eleccion_smart(electores, mesas, elecciones, padrones_existentes)
+    
     if elector:
+        # Insertar el padrón generado
         schema.insert([elector], "padron_eleccion")
-    return elector
+        print(f"INFO: Generado padrón - Elector: {elector['dni_elector']}, Elección: {elector['id_eleccion']}")
+        return elector
+    else:
+        print(f"WARNING: No se pudo generar un padrón único. Combinaciones ocupadas: {combinaciones_ocupadas}/{total_combinaciones_posibles}")
+        return {}
 
 def decide_si_voto(**kwargs):
     ti     = kwargs['ti']
@@ -55,7 +77,7 @@ def decide_tipo_voto(**kwargs):
         return 'insertar_consulta'
     return 'fin'
 
-# --------------- NUEVAS TAREAS PARA “ELIGE” ---------------
+# --------------- NUEVAS TAREAS PARA "ELIGE" ---------------
 
 def insertar_voto_elige_candidato(**kwargs):
     ti         = kwargs['ti']
@@ -135,7 +157,7 @@ with DAG(
         provide_context=True
     )
 
-    # --- Legislativa: base y luego “elige candidato” ---
+    # --- Legislativa: base y luego "elige candidato" ---
     insertar_leg_task    = PythonOperator(
         task_id='insertar_legislativa',
         python_callable=insertar_legislativa,
@@ -147,7 +169,7 @@ with DAG(
         provide_context=True
     )
 
-    # --- Consulta: base y luego “elige opción” ---
+    # --- Consulta: base y luego "elige opción" ---
     insertar_cons_task   = PythonOperator(
         task_id='insertar_consulta',
         python_callable=insertar_consulta,

@@ -185,6 +185,64 @@ class DataGenerator:
         }
         return registro
 
+    def generate_padron_eleccion_smart(self, electores: Records, mesas: Records, elecciones: Records, padrones_existentes: Records) -> dict:
+        """
+        Genera un padrón electoral de forma inteligente, evitando duplicados.
+        
+        Parameters
+        ----------
+        electores : Records
+            Lista de electores disponibles
+        mesas : Records
+            Lista de mesas disponibles
+        elecciones : Records
+            Lista de elecciones disponibles
+        padrones_existentes : Records
+            Lista de padrones ya existentes (con dni_elector e id_eleccion)
+            
+        Returns
+        -------
+        dict
+            Registro de padrón único o {} si no se puede generar
+        """
+        if not electores or not mesas or not elecciones:
+            return {}
+
+        # Crear set de combinaciones existentes para búsqueda rápida
+        combinaciones_existentes = set()
+        for padron in padrones_existentes:
+            combinaciones_existentes.add((padron['dni_elector'], padron['id_eleccion']))
+        
+        # Para cada elección, encontrar electores disponibles
+        for eleccion in elecciones:
+            electores_disponibles = []
+            for elector in electores:
+                combinacion = (elector['dni'], eleccion['id_eleccion'])
+                if combinacion not in combinaciones_existentes:
+                    electores_disponibles.append(elector)
+            
+            # Si hay electores disponibles para esta elección
+            if electores_disponibles:
+                # Elegir un elector disponible
+                elector = random.choice(electores_disponibles)
+                
+                # Encontrar una mesa para esta elección
+                mesas_eleccion = [m for m in mesas if m['id_eleccion'] == eleccion['id_eleccion']]
+                if mesas_eleccion:
+                    mesa = random.choice(mesas_eleccion)
+                    
+                    registro = {
+                        "dni_elector": elector["dni"],
+                        "id_eleccion": eleccion["id_eleccion"],
+                        "nro_mesa":    mesa["nro_mesa"],
+                        "id_centro":   mesa["id_centro"],
+                        "si_voto":     (random.random() < 0.8),
+                    }
+                    return registro
+        
+        # Si no se pudo generar ningún padrón único
+        return {}
+
     def generate_partido_politico(self, n: int) -> Records:
         """Genera n partidos políticos."""
         partidos = []
